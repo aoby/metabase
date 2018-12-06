@@ -129,7 +129,7 @@
   ["-XX:+IgnoreUnrecognizedVMOptions"                                 ; ignore things not recognized for our Java version instead of refusing to start
    "-Xverify:none"                                                    ; disable bytecode verification when running in dev so it starts slightly faster
    "--add-modules=java.xml.bind"                                      ; tell Java 9 (Oracle VM only) to add java.xml.bind to classpath. No longer on it by default. See https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
-   "-Djava.system.class.loader=clojure.lang.DynamicClassLoader"
+   #_"-Djava.system.class.loader=clojure.lang.DynamicClassLoader"
    "-Djava.awt.headless=true"]                                        ; prevent Java icon from randomly popping up in dock when running `lein ring server`
 
   :javac-options ["-target" "1.8", "-source" "1.8"]

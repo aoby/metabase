@@ -155,10 +155,6 @@
   `::concrete`."
   [driver & {:keys [parent abstract?]}]
   {:pre [(keyword? driver)]}
-  (println "register!" driver "parent:" parent) ; NOCOMMIT
-  (when (and (= driver :sqlite)
-             (nil? parent))
-    (throw (Exception. "WTF!")))
   ;; no-op during compilation.
   (when-not *compile-files*
     ;; validate that the registration isn't stomping on things

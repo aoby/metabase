@@ -31,6 +31,7 @@
 ;;; +----------------------------------------------------------------------------------------------------------------+
 
 (defn- add-to-classpath! [^Path jar-path]
+  (println "add to classpath:" jar-path) ; NOCOMMIT
   (classloader/add-url-to-classpath! (-> jar-path .toUri .toURL)))
 
 (defn- plugin-info [^Path jar-path]
@@ -64,6 +65,7 @@
     (init-plugin! path)))
 
 (defn load-plugins! []
+  (println "Loading plugins in " (plugins-dir) "...") ; NOCOMMIT
   (extract-system-modules!)
   (let [paths (plugins-paths)]
     (add-plugins-to-classpath! paths)

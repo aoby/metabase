@@ -5,7 +5,21 @@
   (:import clojure.lang.DynamicClassLoader
            java.net.URL))
 
-(defn- classloader
+(defn- top-level-dynamic-classloader
+  (^DynamicClassLoader []
+   (top-level-dynamic-classloader (.getContextClassLoader (Thread/currentThread))))
+  (^DynamicClassLoader [^ClassLoader classloader]
+   (println "classloader:" classloader) ; NOCOMMIT
+   (if-not (instance? DynamicClassLoader classloader)
+     (let [classloader (DynamicClassLoader. classloader)]
+       (.setContextClassLoader (Thread/currentThread) classloader)
+       classloader)
+     (let [parent (.getParent classloader)]
+       (if (instance? DynamicClassLoader parent)
+         (recur parent)
+         classloader)))))
+
+#_(defn- classloader
   ^DynamicClassLoader []
   (let [sysloader (ClassLoader/getSystemClassLoader)]
     (if-not (instance? DynamicClassLoader sysloader)
@@ -15,9 +29,8 @@
       sysloader)))
 
 (defn class-for-name ^Class [^String classname]
-  (Class/forName classname (boolean :initialize) (classloader)))
+  (Class/forName classname (boolean :initialize) (top-level-dynamic-classloader)))
 
 (defn add-url-to-classpath! [^URL url]
-  (when-let [sysloader (classloader)]
-    (dynapath/add-classpath-url sysloader url)
-    (log/info (trs "Added {0} to classpath" url))))
+  (assert (dynapath/add-classpath-url (top-level-dynamic-classloader) url))
+  (log/info (metabase.util/format-color 'blue (trs "Added {0} to classpath" url))))
