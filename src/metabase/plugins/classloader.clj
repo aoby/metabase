@@ -1,9 +1,11 @@
-(ns metabase.plugins.util
+(ns metabase.plugins.classloader
   (:require [clojure.tools.logging :as log]
+            [dynapath.util :as dynapath]
             [metabase.util.i18n :refer [trs]])
-  (:import clojure.lang.DynamicClassLoader))
+  (:import clojure.lang.DynamicClassLoader
+           java.net.URL))
 
-(defn system-classloader
+(defn- classloader
   ^DynamicClassLoader []
   (let [sysloader (ClassLoader/getSystemClassLoader)]
     (if-not (instance? DynamicClassLoader sysloader)
@@ -13,4 +15,9 @@
       sysloader)))
 
 (defn class-for-name ^Class [^String classname]
-  (Class/forName classname (boolean :initialize) (system-classloader)))
+  (Class/forName classname (boolean :initialize) (classloader)))
+
+(defn add-url-to-classpath! [^URL url]
+  (when-let [sysloader (classloader)]
+    (dynapath/add-classpath-url sysloader url)
+    (log/info (trs "Added {0} to classpath" url))))

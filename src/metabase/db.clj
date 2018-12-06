@@ -10,13 +10,13 @@
             [metabase
              [config :as config]
              [util :as u]]
-            [metabase.db.spec :as dbspec]
+            [metabase.db
+             [connection-pool :as connection-pool]
+             [spec :as dbspec]]
             [metabase.util.i18n :refer [trs]]
             [ring.util.codec :as codec]
             [toucan.db :as db])
-  (:import com.mchange.v2.c3p0.ComboPooledDataSource
-           java.io.StringWriter
-           java.util.Properties
+  (:import java.io.StringWriter
            [liquibase Contexts Liquibase]
            [liquibase.database Database DatabaseFactory]
            liquibase.database.jvm.JdbcConnection
@@ -317,41 +317,17 @@
 ;;; |                                      CONNECTION POOLS & TRANSACTION STUFF                                      |
 ;;; +----------------------------------------------------------------------------------------------------------------+
 
+(def ^:private application-db-connection-pool-properties
+  "c3p0 connection pool properties for the application DB. See
+  https://www.mchange.com/projects/c3p0/#configuration_properties for descriptions of properties."
+  {"minPoolSize"     1
+   "initialPoolSize" 1
+   "maxPoolSize"     15})
+
 (defn connection-pool
   "Create a C3P0 connection pool for the given database `spec`."
-  [{:keys [subprotocol subname classname minimum-pool-size idle-connection-test-period excess-timeout]
-    :or   {minimum-pool-size           3
-           idle-connection-test-period 0
-           excess-timeout              (* 30 60)}
-    :as   spec}]
-  ;; NOCOMMIT
-  (println "subprotocol:" subprotocol)  ; NOCOMMIT
-  (println "URL >>>" (str "jdbc:" subprotocol ":" subname))
-  (identity                             ;;if (= (name subprotocol) "sqlite")
-   #_(str "jdbc:" subprotocol ":" subname)
-
-   (let [driver-class (u/prog1 (.getCanonicalName (class (java.sql.DriverManager/getDriver (format "jdbc:%s://" subprotocol))))
-                        (println "DRIVER CLASS:" <>) ; NOCOMMIT
-                        )]
-     {:datasource (doto (ComboPooledDataSource.)
-                    #_(.setDriverClass                  #_classname driver-class)
-                    #_(.setForceUseNamedDriverClass     false #_true)
-                    (.setJdbcUrl                      (str "jdbc:" subprotocol ":" subname))
-                    (.setMaxIdleTimeExcessConnections excess-timeout)
-                    (.setMaxIdleTime                  (* 3 60 60))
-                    (.setInitialPoolSize              3)
-                    (.setMinPoolSize                  minimum-pool-size)
-                    (.setMaxPoolSize                  15)
-                    (.setIdleConnectionTestPeriod     idle-connection-test-period)
-                    (.setTestConnectionOnCheckin      false)
-                    (.setTestConnectionOnCheckout     false)
-                    (.setPreferredTestQuery           nil)
-                    (.setProperties                   (u/prog1 (Properties.)
-                                                        (doseq [[k v] (dissoc spec :classname :subprotocol :subname
-                                                                              :naming :delimiters :alias-delimiter
-                                                                              :excess-timeout :minimum-pool-size
-                                                                              :idle-connection-test-period)]
-                                                          (.setProperty <> (name k) (str v))))))})))
+  [spec]
+  (connection-pool/connection-pool-spec spec application-db-connection-pool-properties))
 
 (defn- create-connection-pool! [spec]
   (db/set-default-quoting-style! (case (db-type)

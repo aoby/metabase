@@ -1,4 +1,4 @@
-;; -*- comment-column: 70; -*-
+3;; -*- comment-column: 70; -*-
 ;; full set of options are here .. https://github.com/technomancy/leiningen/blob/master/sample.project.clj
 
 (defproject metabase-core "1.0.0-SNAPSHOT"
